@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KernelOne | Multi-Core Scheduler</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    <div class="blob-container">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="app-shell">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand glass-panel">
+                <div class="brand-icon">
+                    <i class="ph-fill ph-cpu"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>KernelOne</h1>
+                    <p>Load Balancing v2.4</p>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="control-section glass-panel">
+                <h3 class="section-title"><i class="ph-bold ph-gear"></i> System Controls</h3>
+                
+                <div class="button-grid">
+                    <button id="btn-spawn" class="btn btn-primary"><i class="ph-bold ph-plus"></i> Spawn</button>
+                    <button id="btn-burst" class="btn btn-outline"><i class="ph-bold ph-lightning"></i> Burst</button>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">Sim Speed <span id="speed-val">1.0x</span></div>
+                    <input type="range" id="speed-slider" min="0.5" max="5" step="0.5" value="1">
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">Algorithm</div>
+                    <select id="algo-select">
+                        <option value="least-load">Least Load (Push)</option>
+                        <option value="work-stealing">Work Stealing (Pull)</option>
+                        <option value="round-robin">Global Round Robin</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">Core Count <span id="core-count-val">4</span></div>
+                    <input type="range" id="core-slider" min="2" max="12" step="1" value="4">
+                </div>
+
+                <div class="button-grid" style="grid-template-columns: 1fr;">
+                    <button id="btn-pause" class="btn btn-outline"><i class="ph-bold ph-pause"></i> Pause System</button>
+                    <button id="btn-reset" class="btn btn-outline btn-danger"><i class="ph-bold ph-trash"></i> Cold Reset</button>
+                </div>
+            </div>
+
+            <!-- Global Metrics -->
+            <div class="metrics-grid glass-panel">
+                <h3 class="section-title"><i class="ph-bold ph-chart-bar"></i> Global Telemetry</h3>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h4>System Load</h4>
+                        <p id="stat-load">0%</p>
+                    </div>
+                    <i class="ph-bold ph-activity text-primary"></i>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h4>Throughput</h4>
+                        <p id="stat-tput">0.0</p>
+                    </div>
+                    <i class="ph-bold ph-rocket text-secondary"></i>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h4>Starvation Risk</h4>
+                        <p id="stat-risk">Low</p>
+                    </div>
+                    <i class="ph-bold ph-warning text-accent"></i>
+                </div>
+            </div>
+
+            <!-- Logs -->
+            <div class="logs-panel glass-panel">
+                <div class="logs-header">
+                    <h3 class="section-title"><i class="ph-bold ph-terminal"></i> Kernel Logs</h3>
+                    <button id="btn-clear-logs" style="background:none; border:none; color:var(--text-muted); cursor:pointer;"><i class="ph-bold ph-x-circle"></i></button>
+                </div>
+                <div id="logs-content" class="logs-content">
+                    <!-- Logs will appear here -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Visualization -->
+        <main class="main-content">
+            <!-- Global Queue -->
+            <section class="global-queue-container glass-panel">
+                <div class="queue-header">
+                    <h3 class="section-title"><i class="ph-bold ph-stack"></i> Global Inbound Queue</h3>
+                    <div class="core-badge" id="global-queue-count">0 Processes</div>
+                </div>
+                <div id="global-queue" class="queue-track">
+                    <!-- Global processes -->
+                </div>
+            </section>
+
+            <!-- CPU Cores Grid -->
+            <section id="cpu-grid" class="cpu-grid">
+                <!-- Cores will be injected here by JS -->
+            </section>
+        </main>
+    </div>
+
+    <!-- Templates -->
+    <template id="core-template">
+        <div class="cpu-core glass-panel">
+            <div class="core-head">
+                <div class="core-title">
+                    <i class="ph-fill ph-cpu"></i>
+                    <div class="core-info">
+                        <h4 class="core-name">Core 0</h4>
+                        <div class="thermal-wrap">
+                            <div class="thermal-dot"></div>
+                            <span class="thermal-val">38°C</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="core-badge util-text">0%</div>
+            </div>
+            
+            <div class="util-bar">
+                <div class="util-fill"></div>
+            </div>
+
+            <div class="exec-unit">
+                <span class="exec-label">L1 Execution Unit</span>
+                <div class="current-process">
+                    <span class="text-muted" style="font-size: 0.875rem;">Idle</span>
+                </div>
+            </div>
+
+            <div class="local-queue-wrap">
+                <span class="exec-label" style="display:block; margin-bottom:8px;">Local Runqueue</span>
+                <div class="local-queue">
+                    <!-- Local processes -->
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="script.js"></script>
+</body>
+</html>
