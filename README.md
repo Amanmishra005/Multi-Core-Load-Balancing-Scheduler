@@ -89,7 +89,7 @@ Backend integration (Node.js)
 👨‍💻 Author
 
 Atul Yadav
-B.Tech 1st Year
+B.Tech 2nd Year
 
 🎯 Conclusion
 
